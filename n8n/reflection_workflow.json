@@ -47,7 +47,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'llama-3.1-8b-instant', messages: [ { role: 'system', content: 'You are an expert Python developer. Write clean, safe Python functions for NLP and text-processing tasks. Include a docstring. Handle edge cases. Return ONLY Python code, no markdown fences.' }, { role: 'user', content: $json.round_count === 0 ? `Write a Python function for this NLP/text-processing task:\\n${$json.task}` : `You are revising your previous Python function.\\n\\nOriginal task:\\n${$json.task}\\n\\nPrevious code:\\n${$json.code}\\n\\nCritique received:\\n${$json.last_critique}\\n\\nRewrite the function to fix every issue. Return ONLY corrected Python code.` } ], temperature: 0.3, max_tokens: 1024 } }}",
+        "jsonBody": "={{ { model: 'llama-3.1-8b-instant', messages: [ { role: 'system', content: 'You are an expert Python developer. Write clean, safe Python functions for NLP and text-processing tasks. Include a docstring. Handle edge cases. Return ONLY Python code, no markdown fences. Do not include example usage, tests, assert statements, print statements, or comments outside the function.' }, { role: 'user', content: $json.round_count === 0 ? `Write a Python function for this NLP/text-processing task:\\n${$json.task}` : `You are revising your previous Python function.\\n\\nOriginal task:\\n${$json.task}\\n\\nPrevious code:\\n${$json.code}\\n\\nCritique received:\\n${$json.last_critique}\\n\\nRewrite the function to fix every issue. Return ONLY corrected Python code.` } ], temperature: 0.3, max_tokens: 1024 } }}",
         "options": {}
       },
       "id": "668c21a6-aa28-40af-8948-d0fd433fd27f",
