@@ -21,6 +21,7 @@ When given a task, write a clean, working Python function.
 Include a docstring.
 Handle edge cases.
 Return ONLY the Python code - no explanation, no markdown fences.
+Do not include example usage, tests, assert statements, print statements, or comments outside the function.
 """.strip()
 
 CRITIC_PROMPT = """
@@ -82,8 +83,21 @@ def clean_code_output(text: str) -> str:
     cleaned = text.strip()
     match = re.match(r"^```(?:python)?\s*(.*?)\s*```$", cleaned, flags=re.DOTALL | re.IGNORECASE)
     if match:
-        return match.group(1).strip()
-    return cleaned
+        cleaned = match.group(1).strip()
+    cleanup_markers = [
+        "\n# Example usage",
+        "\n# Test cases",
+        "\n# Tests",
+        "\nif __name__",
+        "\nprint(",
+        "\nassert ",
+    ]
+    cut_at = len(cleaned)
+    for marker in cleanup_markers:
+        index = cleaned.find(marker)
+        if index != -1:
+            cut_at = min(cut_at, index)
+    return cleaned[:cut_at].strip()
 
 
 def normalize_critique(text: str) -> str:
