@@ -30,7 +30,7 @@ CRITIC_PROMPT = """
 You are a senior Python code reviewer.
 Evaluate the given code against these five criteria:
 
-1. Correctness - does it produce the right output?
+1. Correctness - does it solve the exact requested task and produce the right output?
 2. Edge cases - does it handle None, empty, zero, negatives?
 3. Readability - clear names, comments, easy to follow?
 4. Efficiency - no unnecessary loops or operations?
@@ -55,6 +55,9 @@ You are an expert Python developer revising your previous code.
 
 Your original code:
 {original}
+
+Original task:
+{task}
 
 Code review critique received:
 {critique}
@@ -83,6 +86,34 @@ def clean_code_output(text: str) -> str:
     match = re.match(r"^```(?:python)?\s*(.*?)\s*```$", cleaned, flags=re.DOTALL | re.IGNORECASE)
     if match:
         return match.group(1).strip()
+    return cleaned
+
+
+def normalize_critique(text: str) -> str:
+    """Keep weak-model critique output compatible with the exact APPROVED stop rule."""
+    cleaned = text.strip()
+    upper = cleaned.upper()
+
+    if upper == "APPROVED":
+        return "APPROVED"
+    if "ISSUE" not in upper and upper.startswith("APPROVED"):
+        return "APPROVED"
+    if "ISSUE" not in upper and "NO ISSUES" in upper:
+        return "APPROVED"
+
+    if "ISSUE" in upper and "APPROVED" in upper:
+        filtered_lines = []
+        for line in cleaned.splitlines():
+            line_upper = line.strip().upper()
+            if line_upper == "APPROVED":
+                continue
+            if "IF ALL FIVE CRITERIA" in line_upper:
+                continue
+            if "RESPOND WITH EXACTLY" in line_upper:
+                continue
+            filtered_lines.append(line)
+        return "\n".join(filtered_lines).strip()
+
     return cleaned
 
 
@@ -123,10 +154,10 @@ def run_reflection(task: str, max_rounds: int) -> ReflectResponse:
     )
 
     for round_num in range(1, max_rounds + 1):
-        critique = call_llm(
+        critique = normalize_critique(call_llm(
             system=CRITIC_PROMPT,
-            user=f"Review this Python code:\n\n{current_code}",
-        )
+            user=f"Original task:\n{task}\n\nReview whether this Python code solves that exact task:\n\n{current_code}",
+        ))
 
         if critique.strip().upper() == "APPROVED":
             critiques.append("APPROVED")
@@ -141,7 +172,7 @@ def run_reflection(task: str, max_rounds: int) -> ReflectResponse:
         current_code = clean_code_output(
             call_llm(
                 system=GENERATOR_PROMPT,
-                user=REVISION_PROMPT.format(original=current_code, critique=critique),
+                user=REVISION_PROMPT.format(task=task, original=current_code, critique=critique),
             )
         )
 
@@ -374,6 +405,13 @@ DASHBOARD_HTML = """
       background: #fff1ef;
       border-color: #ffd0ca;
     }
+    .last-task {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      max-width: 620px;
+    }
     .code {
       margin: 0;
       padding: 18px;
@@ -457,7 +495,10 @@ DASHBOARD_HTML = """
 
       <section class="panel results">
         <div class="result-head">
-          <h2>Final output</h2>
+          <div>
+            <h2>Final output</h2>
+            <div id="lastTask" class="last-task">No run yet.</div>
+          </div>
           <span id="approval" class="approval">Idle</span>
         </div>
         <pre id="code" class="code">Run a task to generate reviewed Python code.</pre>
@@ -475,6 +516,7 @@ DASHBOARD_HTML = """
     const code = document.querySelector("#code");
     const trace = document.querySelector("#trace");
     const approval = document.querySelector("#approval");
+    const lastTask = document.querySelector("#lastTask");
 
     document.querySelectorAll(".example").forEach((button) => {
       button.addEventListener("click", () => {
@@ -503,16 +545,19 @@ DASHBOARD_HTML = """
 
     run.addEventListener("click", async () => {
       run.disabled = true;
+      const runTask = task.value;
+      document.querySelectorAll(".example").forEach((button) => button.disabled = true);
       code.textContent = "Generating, reviewing, and revising...";
       trace.innerHTML = '<div class="empty">Waiting for critique rounds.</div>';
       setApproval("Running", "");
+      lastTask.textContent = `Last run task: ${runTask}`;
 
       try {
         const response = await fetch("/reflect", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
-            task: task.value,
+            task: runTask,
             max_rounds: Number(rounds.value || 3)
           })
         });
@@ -529,6 +574,7 @@ DASHBOARD_HTML = """
         setApproval("Error", "bad");
       } finally {
         run.disabled = false;
+        document.querySelectorAll(".example").forEach((button) => button.disabled = false);
       }
     });
   </script>
