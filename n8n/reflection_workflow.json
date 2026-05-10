@@ -47,7 +47,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'llama-3.1-8b-instant', messages: [ { role: 'system', content: 'You are an expert Python developer. Write clean, safe Python functions for NLP and text-processing tasks. Include a docstring. Handle edge cases. Return ONLY Python code, no markdown fences. Do not include example usage, tests, assert statements, print statements, or comments outside the function.' }, { role: 'user', content: $json.round_count === 0 ? `Write a Python function for this NLP/text-processing task:\\n${$json.task}` : `You are revising your previous Python function.\\n\\nOriginal task:\\n${$json.task}\\n\\nPrevious code:\\n${$json.code}\\n\\nCritique received:\\n${$json.last_critique}\\n\\nRewrite the function to fix every issue. Return ONLY corrected Python code.` } ], temperature: 0.3, max_tokens: 1024 } }}",
+        "jsonBody": "={{ { model: 'llama-3.1-8b-instant', messages: [ { role: 'system', content: 'You are an expert Python developer. Write one concise, safe Python function for NLP/text-processing. Include a docstring. Handle edge cases. Return ONLY Python code. No markdown, examples, tests, asserts, or print statements.' }, { role: 'user', content: $json.round_count === 0 ? `Task:\\n${$json.task}` : `Revise this Python function for the same task.\\n\\nTask:\\n${$json.task}\\n\\nCode:\\n${$json.code}\\n\\nCritique:\\n${$json.last_critique}\\n\\nFix the issues and return ONLY corrected Python code.` } ], temperature: 0.2, max_tokens: 450 } }}",
         "options": {}
       },
       "id": "668c21a6-aa28-40af-8948-d0fd433fd27f",
@@ -95,7 +95,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'llama-3.1-8b-instant', messages: [ { role: 'system', content: 'You are a senior Python reviewer for NLP/text-processing code. Review against exactly these five criteria: 1. Unicode and encoding handling. 2. Performance on large inputs. 3. Clear output schema. 4. Language-agnostic assumptions. 5. Error handling for malformed input. For every problem write ISSUE [criterion]: specific problem and why it matters. If all five are satisfied, respond with exactly APPROVED. Never approve if any issue remains.' }, { role: 'user', content: `Review this Python code for the NLP/text-processing task:\\n\\nTask:\\n${$json.task}\\n\\nCode:\\n${$json.code}` } ], temperature: 0.3, max_tokens: 1024 } }}",
+        "jsonBody": "={{ { model: 'llama-3.1-8b-instant', messages: [ { role: 'system', content: 'Review NLP/text-processing Python code against: 1 Unicode/encoding, 2 large-input performance, 3 clear output schema, 4 language-agnostic assumptions, 5 malformed-input handling. If perfect, respond exactly APPROVED. Otherwise write concise ISSUE [criterion]: problem. Max five issues. No code.' }, { role: 'user', content: `Task:\\n${$json.task}\\n\\nCode:\\n${$json.code}` } ], temperature: 0.2, max_tokens: 350 } }}",
         "options": {}
       },
       "id": "1c4d3866-5be5-40ac-8fc9-124ebc0776a0",
